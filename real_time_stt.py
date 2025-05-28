@@ -80,18 +80,26 @@ def listen_print_loop(responses, translate_client, target_languages):
             sys.stdout.flush()
             num_chars_printed = len(transcript)
         else:
-            print(f"Transcript (en-US): {transcript}{overwrite_chars}")
+            detected_language_code = result.language_code
+            print(f"Transcript ({detected_language_code}): {transcript}{overwrite_chars}")
 
             # Translate and print for each target language
             for lang_code, lang_name in target_languages.items():
                 try:
+                    # If the detected language is the same as the target language, skip translation
+                    if detected_language_code.split('-')[0] == lang_code:
+                        print(f"(Already in {lang_name}) ") # Indicate it's already in the target language
+                        continue
+
                     translation_result = translate_client.translate(
-                        transcript, target_language=lang_code
+                        transcript, 
+                        target_language=lang_code,
+                        source_language=detected_language_code # Specify source language for translation
                     )
                     translated_text = translation_result["translatedText"]
                     print(f"Translation ({lang_name} - {lang_code}): {translated_text}")
                 except Exception as e:
-                    print(f"Error translating to {lang_name}: {e}")
+                    print(f"Error translating to {lang_name} from {detected_language_code}: {e}")
 
             # Exit recognition if any of the transcribed phrases could be
             # one of our keywords.
@@ -105,7 +113,10 @@ def main():
     config = speech.RecognitionConfig(
         encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
         sample_rate_hertz=RATE,
-        language_code="en-US",  # Change as needed
+        language_code="kn-IN",  # Primary language code
+        alternative_language_codes=["hi-IN", "en-US", "ta-IN", "te-IN"], # Adjusted to 4 alternatives
+        model="latest_long",
+        enable_automatic_punctuation=True,
     )
 
     streaming_config = speech.StreamingRecognitionConfig(
@@ -116,6 +127,7 @@ def main():
     # Setup the translation client and target languages
     translate_client = translate.Client()
     target_languages = {
+        "en": "English",
         "hi": "Hindi",
         "kn": "Kannada",
         "ta": "Tamil",
