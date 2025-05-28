@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Form Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #4f46e5, #7c3aed);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .language-selector {
+            padding: 20px 30px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .language-selector label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .language-selector select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            transition: border-color 0.3s;
+        }
+
+        .language-selector select:focus {
+            outline: none;
+            border-color: #4f46e5;
+        }
+
+        .controls {
+            padding: 30px;
+            text-align: center;
+            background: #fafafa;
+        }
+
+        .voice-btn {
+            background: linear-gradient(45deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 10px;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .voice-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .voice-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .status.listening {
+            background: #dcfce7;
+            color: #166534;
+            border: 2px solid #bbf7d0;
+        }
+
+        .status.speaking {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 2px solid #bfdbfe;
+        }
+
+        .status.processing {
+            background: #fef3c7;
+            color: #92400e;
+            border: 2px solid #fed7aa;
+        }
+
+        .form-container {
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+            font-size: 1.1rem;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .form-group.filled input, .form-group.filled select, .form-group.filled textarea {
+            background: #f0fdf4;
+            border-color: #22c55e;
+        }
+
+        .current-field {
+            background: #fef3c7 !important;
+            border-color: #f59e0b !important;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .submit-btn {
+            background: linear-gradient(45deg, #7c3aed, #a855f7);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(124, 58, 237, 0.3);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #4f46e5, #7c3aed);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .field-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            margin-left: 10px;
+            transition: all 0.3s;
+        }
+
+        .field-indicator.current {
+            background: #f59e0b;
+            animation: blink 1s infinite;
+        }
+
+        .field-indicator.completed {
+            background: #22c55e;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎤 Voice Form Assistant</h1>
+            <p>Fill forms using your voice in your preferred language</p>
+        </div>
+
+        <div class="language-selector">
+            <label for="languageSelect">Select Your Language / अपनी भाषा चुनें:</label>
+            <select id="languageSelect">
+                <option value="hi-IN">हिंदी (Hindi)</option>
+                <option value="en-IN">English (India)</option>
+                <option value="bn-IN">বাংলা (Bengali)</option>
+                <option value="te-IN">తెలుగు (Telugu)</option>
+                <option value="mr-IN">मराठी (Marathi)</option>
+                <option value="ta-IN">தமிழ் (Tamil)</option>
+                <option value="gu-IN">ગુજરાતી (Gujarati)</option>
+                <option value="kn-IN">ಕನ್ನಡ (Kannada)</option>
+                <option value="ml-IN">മലയാളം (Malayalam)</option>
+                <option value="pa-IN">ਪੰਜਾਬੀ (Punjabi)</option>
+            </select>
+        </div>
+
+        <div class="controls">
+            <button id="startVoiceBtn" class="voice-btn">🎤 Start Voice Assistant</button>
+            <button id="stopVoiceBtn" class="voice-btn" disabled>⏹️ Stop Assistant</button>
+            
+            <div id="status" class="status" style="display: none;"></div>
+            
+            <div class="progress-bar">
+                <div id="progressFill" class="progress-fill"></div>
+            </div>
+        </div>
+
+        <div class="form-container">
+            <form id="voiceForm">
+                <div class="form-group">
+                    <label for="fullName">Full Name / पूरा नाम <span class="field-indicator" id="indicator-0"></span></label>
+                    <input type="text" id="fullName" name="fullName" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address / ईमेल पता <span class="field-indicator" id="indicator-1"></span></label>
+                    <input type="email" id="email" name="email" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Phone Number / फोन नंबर <span class="field-indicator" id="indicator-2"></span></label>
+                    <input type="tel" id="phone" name="phone" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="age">Age / उम्र <span class="field-indicator" id="indicator-3"></span></label>
+                    <input type="number" id="age" name="age" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="gender">Gender / लिंग <span class="field-indicator" id="indicator-4"></span></label>
+                    <select id="gender" name="gender" disabled>
+                        <option value="">Select / चुनें</option>
+                        <option value="male">Male / पुरुष</option>
+                        <option value="female">Female / महिला</option>
+                        <option value="other">Other / अन्य</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="city">City / शहर <span class="field-indicator" id="indicator-5"></span></label>
+                    <input type="text" id="city" name="city" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="occupation">Occupation / व्यवसाय <span class="field-indicator" id="indicator-6"></span></label>
+                    <input type="text" id="occupation" name="occupation" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="comments">Additional Comments / अतिरिक्त टिप्पणी <span class="field-indicator" id="indicator-7"></span></label>
+                    <textarea id="comments" name="comments" rows="3" readonly></textarea>
+                </div>
+
+                <button type="submit" class="submit-btn">Submit Form / फॉर्म जमा करें</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        class VoiceFormAssistant {
+            constructor() {
+                this.currentFieldIndex = 0;
+                this.isActive = false;
+                this.recognition = null;
+                this.synthesis = window.speechSynthesis;
+                this.selectedLanguage = 'hi-IN';
+                
+                this.formFields = [
+                    {
+                        id: 'fullName',
+                        label: 'Full Name',
+                        prompt: {
+                            'hi-IN': 'कृपया अपना पूरा नाम बताएं',
+                            'en-IN': 'Please tell me your full name',
+                            'bn-IN': 'অনুগ্রহ করে আপনার পূর্ণ নাম বলুন',
+                            'te-IN': 'దయచేసి మీ పూర్తి పేరు చెప్పండి',
+                            'mr-IN': 'कृपया तुमचे पूर्ण नाव सांगा',
+                            'ta-IN': 'தயவுசெய்து உங்கள் முழு பெயரை சொல்லுங்கள்',
+                            'gu-IN': 'કૃપા કરીને તમારું પૂરું નામ કહો',
+                            'kn-IN': 'ದಯವಿಟ್ଟು ನಿಮ್ମ ಪೂರ್ಣ ಹೆಸರನ್ನು ಹೇಳಿ',
+                            'ml-IN': 'ദയവായി നിങ്ങളുടെ പൂർണ്ണമായ പേര് പറയൂ',
+                            'pa-IN': 'ਕਿਰਪਾ ਕਰਕੇ ਆਪਣਾ ਪੂਰਾ ਨਾਮ ਦੱਸੋ'
+                        }
+                    },
+                    {
+                        id: 'email',
+                        label: 'Email Address',
+                        prompt: {
+                            'hi-IN': 'कृपया अपना ईमेल पता बताएं',
+                            'en-IN': 'Please provide your email address',
+                            'bn-IN': 'অনুগ্রহ করে আপনার ইমেইল ঠিকানা দিন',
+                            'te-IN': 'దయచేసి మీ ఇమెయిల్ చిరునామా చెప్పండి',
+                            'mr-IN': 'कृपया तुमचा ईमेल पत्ता द्या',
+                            'ta-IN': 'தயவுசெய்து உங்கள் மின்னஞ்சல் முகவரியை கூறுங்கள்',
+                            'gu-IN': 'કૃપા કરીને તમારું ઇમેઇલ સરનામું આપો',
+                            'kn-IN': 'ದಯವಿಟ್ಟು ನಿಮ್ಮ ಇಮೇಲ್ ವಿಳಾಸವನ್ನು ಹೇಳಿ',
+                            'ml-IN': 'ദയവായി നിങ്ങളുടെ ഇമെയിൽ വിലാസം നൽകൂ',
+                            'pa-IN': 'ਕਿਰਪਾ ਕਰਕੇ ਆਪਣਾ ਈਮੇਲ ਪਤਾ ਦਿਓ'
+                        }
+                    },
+                    {
+                        id: 'phone',
+                        label: 'Phone Number',
+                        prompt: {
+                            'hi-IN': 'कृपया अपना फोन नंबर बताएं',
+                            'en-IN': 'Please tell me your phone number',
+                            'bn-IN': 'অনুগ্রহ করে আপনার ফোন নম্বর বলুন',
+                            'te-IN': 'దయచేసి మీ ఫోన్ నంబర్ చెప్పండి',
+                            'mr-IN': 'कृपया तुमचा फोन नंबर सांगा',
+                            'ta-IN': 'தயவுசெய்து உங்கள் தொலைபேசி எண்ணை சொல்லுங்கள்',
+                            'gu-IN': 'કૃપા કરીને તમારો ફોન નંબર કહો',
+                            'kn-IN': 'ದಯವಿಟ್ಟು ನಿಮ್ಮ ಫೋನ್ ಸಂಖ್ಯೆಯನ್ನು ಹೇಳಿ',
+                            'ml-IN': 'ദയവായി നിങ്ങളുടെ ഫോൺ നമ്പർ പറയൂ',
+                            'pa-IN': 'ਕਿਰਪਾ ਕਰਕੇ ਆਪਣਾ ਫੋਨ ਨੰਬਰ ਦੱਸੋ'
+                        }
+                    },
+                    {
+                        id: 'age',
+                        label: 'Age',
+                        prompt: {
+                            'hi-IN': 'कृपया अपनी उम्र बताएं',
+                            'en-IN': 'Please tell me your age',
+                            'bn-IN': 'অনুগ্রহ করে আপনার বয়স বলুন',
+                            'te-IN': 'దయచేసి మీ వయస్సు చెప్పండి',
+                            'mr-IN': 'कृपया तुमचे वय सांगा',
+                            'ta-IN': 'தயவுசெய்து உங்கள் வயதை சொல்லுங்கள்',
+                            'gu-IN': 'કૃપા કરીને તમારી ઉંમર કહો',
+                            'kn-IN': 'ದಯವಿಟ್ಟು ನಿಮ್ಮ ವಯಸ್ಸನ್ನು ಹೇಳಿ',
+                            'ml-IN': 'ദയവായി നിങ്ങളുടെ പ്രായം പറയൂ',
+                            'pa-IN': 'ਕਿਰਪਾ ਕਰਕੇ ਆਪਣੀ ਉਮਰ ਦੱਸੋ'
+                        }
+                    },
+                    {
+                        id: 'gender',
+                        label: 'Gender',
+                        prompt: {
+                            'hi-IN': 'कृपया अपना लिंग बताएं - पुरुष, महिला या अन्य',
+                            'en-IN': 'Please tell me your gender - male, female, or other',
+                            'bn-IN': 'অনুগ্রহ করে আপনার লিঙ্গ বলুন - পুরুষ, মহিলা বা অন্য',
+                            'te-IN': 'దయచేసి మీ లింగం చెప్పండి - పురుషుడు, స్త్రీ లేదా ఇతర',
+                            'mr-IN': 'कृपया तुमचे लिंग सांगा - पुरुष, स्त्री किंवा इतर',
+                            'ta-IN': 'தயவுசெய்து உங்கள் பாலினத்தை சொல்லுங்கள் - ஆண், பெண் அல்லது மற்றவை',
+                            'gu-IN': 'કૃપા કરીને તમારું લિંગ કહો - પુરુષ, સ્ત્રી અથવા અન્ય',
+                            'kn-IN': 'ದಯವಿಟ್ಟು ನಿಮ್ಮ ಲಿಂಗವನ್ನು ಹೇಳಿ - ಪುರುಷ, ಮಹಿಳೆ ಅಥವಾ ಇತರೆ',
+                            'ml-IN': 'ദയവായി നിങ്ങളുടെ ലിംഗം പറയൂ - പുരുഷൻ, സ്ത്രീ അല്ലെങ്കിൽ മറ്റുള്ളവ',
+                            'pa-IN': 'ਕਿਰਪਾ ਕਰਕੇ ਆਪਣਾ ਲਿੰਗ ਦੱਸੋ - ਮਰਦ, ਔਰਤ ਜਾਂ ਹੋਰ'
+                        }
+                    },
+                    {
+                        id: 'city',
+                        label: 'City',
+                        prompt: {
+                            'hi-IN': 'कृपया अपने शहर का नाम बताएं',
+                            'en-IN': 'Please tell me your city name',
+                            'bn-IN': 'অনুগ্রহ করে আপনার শহরের নাম বলুন',
+                            'te-IN': 'దయచేసి మీ నగర పేరు చెప్పండి',
+                            'mr-IN': 'कृपया तुमच्या शहराचे नाव सांगा',
+                            'ta-IN': 'தயவுசெய்து உங்கள் நகரத்தின் பெயரை சொல்லுங்கள்',
+                            'gu-IN': 'કૃપા કરીને તમારા શહેરનું નામ કહો',
+                            'kn-IN': 'ದಯವಿಟ್ಟು ನಿಮ್ಮ ನಗರದ ಹೆಸರನ್ನು ಹೇಳಿ',
+                            'ml-IN': 'ദയവായി നിങ്ങളുടെ നഗരത്തിന്റെ പേര് പറയൂ',
+                            'pa-IN': 'ਕਿਰਪਾ ਕਰਕੇ ਆਪਣੇ ਸ਼ਹਿਰ ਦਾ ਨਾਮ ਦੱਸੋ'
+                        }
+                    },
+                    {
+                        id: 'occupation',
+                        label: 'Occupation',
+                        prompt: {
+                            'hi-IN': 'कृपया अपना व्यवसाय बताएं',
+                            'en-IN': 'Please tell me your occupation',
+                            'bn-IN': 'অনুগ্রহ করে আপনার পেশা বলুন',
+                            'te-IN': 'దయచేసి మీ వృత్తి చెప్పండి',
+                            'mr-IN': 'कृपया तुमचा व्यवसाय सांगा',
+                            'ta-IN': 'தயவுசெய்து உங்கள் தொழிலை சொல்லுங்கள்',
+                            'gu-IN': 'કૃપા કરીને તમારો વ્યવસાય કહો',
+                            'kn-IN': 'ದಯವಿಟ್ಟು ನಿಮ್ಮ ವೃತ್ತಿಯನ್ನು ಹೇಳಿ',
+                            'ml-IN': 'ദയവായി നിങ്ങളുടെ തൊഴിൽ പറയൂ',
+                            'pa-IN': 'ਕਿਰਪਾ ਕਰਕੇ ਆਪਣਾ ਕਿੱਤਾ ਦੱਸੋ'
+                        }
+                    },
+                    {
+                        id: 'comments',
+                        label: 'Additional Comments',
+                        prompt: {
+                            'hi-IN': 'कोई अतिरिक्त टिप्पणी या जानकारी जो आप साझा करना चाहते हैं?',
+                            'en-IN': 'Any additional comments or information you would like to share?',
+                            'bn-IN': 'আপনি শেয়ার করতে চান এমন কোন অতিরিক্ত মন্তব্য বা তথ্য?',
+                            'te-IN': 'మీరు పంచుకోవాలని అనుకునే ఏదైనా అదనపు వ్యాఖ్యలు లేదా సమాచారం?',
+                            'mr-IN': 'तुम्ही शेअर करू इच्छिता अशी कोणतीही अतिरिक्त टिप्पणी किंवा माहिती?',
+                            'ta-IN': 'நீங்கள் பகிர விரும்பும் ஏதேனும் கூடுதல் கருத்துகள் அல்லது தகவல்கள்?',
+                            'gu-IN': 'કોઈ વધારાની ટિપ્પણી અથવા માહિતી જે તમે શેર કરવા માંગો છો?',
+                            'kn-IN': 'ನೀವು ಹಂಚಿಕೊಳ್ಳಲು ಬಯಸುವ ಯಾವುದೇ ಹೆಚ್ಚುವರಿ ಕಾಮೆಂಟ್‌ಗಳು ಅಥವಾ ಮಾಹಿತಿ?',
+                            'ml-IN': 'നിങ്ങൾ പങ്കിടാൻ ആഗ്രഹിക്കുന്ന എന്തെങ്കിലും അധിക കമന്റുകളോ വിവരങ്ങളോ?',
+                            'pa-IN': 'ਕੋਈ ਵਾਧੂ ਟਿੱਪਣੀਆਂ ਜਾਂ ਜਾਣਕਾਰੀ ਜੋ ਤੁਸੀਂ ਸਾਂਝੀ ਕਰਨਾ ਚਾਹੁੰਦੇ ਹੋ?'
+                        }
+                    }
+                ];
+
+                this.initializeEventListeners();
+                this.initializeSpeechRecognition();
+            }
+
+            initializeEventListeners() {
+                document.getElementById('startVoiceBtn').addEventListener('click', () => this.startVoiceAssistant());
+                document.getElementById('stopVoiceBtn').addEventListener('click', () => this.stopVoiceAssistant());
+                document.getElementById('languageSelect').addEventListener('change', (e) => {
+                    this.selectedLanguage = e.target.value;
+                });
+                document.getElementById('voiceForm').addEventListener('submit', (e) => this.handleFormSubmit(e));
+            }
+
+            initializeSpeechRecognition() {
+                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                    this.recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                    this.recognition.continuous = false;
+                    this.recognition.interimResults = false;
+                    
+                    this.recognition.onresult = (event) => this.handleSpeechResult(event);
+                    this.recognition.onerror = (event) => this.handleSpeechError(event);
+                    this.recognition.onend = () => this.handleSpeechEnd();
+                } else {
+                    alert('Speech recognition is not supported in your browser. Please use a modern browser like Chrome.');
+                }
+            }
+
+            startVoiceAssistant() {
+                this.isActive = true;
+                this.currentFieldIndex = 0;
+                document.getElementById('startVoiceBtn').disabled = true;
+                document.getElementById('stopVoiceBtn').disabled = false;
+                
+                this.updateProgress();
+                this.speakAndListen();
+            }
+
+            stopVoiceAssistant() {
+                this.isActive = false;
+                this.recognition?.stop();
+                this.synthesis.cancel();
+                
+                document.getElementById('startVoiceBtn').disabled = false;
+                document.getElementById('stopVoiceBtn').disabled = true;
+                this.hideStatus();
+                this.clearFieldHighlights();
+            }
+
+            speakAndListen() {
+                if (!this.isActive || this.currentFieldIndex >= this.formFields.length) {
+                    this.completeForm();
+                    return;
+                }
+
+                const currentField = this.formFields[this.currentFieldIndex];
+                const prompt = currentField.prompt[this.selectedLanguage];
+                
+                this.highlightCurrentField();
+                this.showStatus('speaking', 'Speaking...');
+                this.speak(prompt, () => {
+                    this.showStatus('listening', 'Listening...');
+                    this.startListening();
+                });
+            }
+
+            startListening() {
+                if (!this.recognition || !this.isActive) return;
+                
+                this.recognition.lang = this.selectedLanguage;
+                try {
+                    this.recognition.start();
+                } catch (error) {
+                    console.error('Speech recognition error:', error);
+                    this.handleSpeechError({ error: 'network' });
+                }
+            }
+
+            speak(text, callback) {
+                if (!this.isActive) return;
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = this.selectedLanguage;
+                utterance.rate = 0.9;
+                utterance.pitch = 1;
+                
+                // Try to find a voice for the selected language
+                const voices = this.synthesis.getVoices();
+                const selectedVoice = voices.find(voice => voice.lang === this.selectedLanguage) || 
+                                   voices.find(voice => voice.lang.startsWith(this.selectedLanguage.split('-')[0]));
+                
+                if (selectedVoice) {
+                    utterance.voice = selectedVoice;
+                }
+                
+                utterance.onend = callback;
+                utterance.onerror = (event) => {
+                    console.error('Speech synthesis error:', event);
+                    if (callback) callback();
+                };
+                
+                this.synthesis.speak(utterance);
+            }
+
+            handleSpeechResult(event) {
+                if (!this.isActive) return;
+                
+                const result = event.results[0][0].transcript.trim();
+                const currentField = this.formFields[this.currentFieldIndex];
+                
+                this.showStatus('processing', 'Processing...');
+                
+                // Process the result based on field type
+                this.processFieldInput(currentField, result);
+                
+                // Move to next field
+                setTimeout(() => {
+                    this.currentFieldIndex++;
+                    this.updateProgress();
+                    this.speakAndListen();
+                }, 1500);
+            }
+
+            processFieldInput(field, input) {
+                const element = document.getElementById(field.id);
+                let processedValue = input;
+                
+                switch (field.id) {
+                    case 'email':
+                        // Basic email processing
+                        processedValue = this.processEmail(input);
+                        break;
+                    case 'phone':
+                        // Extract numbers from speech
+                        processedValue = this.processPhoneNumber(input);
+                        break;
+                    case 'age':
+                        // Extract age numbers
+                        processedValue = this.processAge(input);
+                        break;
+                    case 'gender':
+                        // Process gender selection
+                        processedValue = this.processGender(input);
+                        if (element.tagName === 'SELECT') {
+                            element.disabled = false;
+                            element.value = processedValue;
+                            element.disabled = true;
+                        }
+                        this.markFieldCompleted(this.currentFieldIndex);
+                        return;
+                    default:
+                        processedValue = this.capitalizeFirst(input);
+                        break;
+                }
+                
+                if (element.tagName === 'TEXTAREA') {
+                    element.value = processedValue;
+                } else {
+                    element.value = processedValue;
+                }
+                
+                this.markFieldCompleted(this.currentFieldIndex);
+            }
+
+            processEmail(input) {
+                // Convert common speech patterns to email format
+                let email = input.toLowerCase()
+                    .replace(/\s+at\s+/g, '@')
+                    .replace(/\s+dot\s+/g, '.')
+                    .replace(/\s+/g, '');
+                
+                // Add @ if missing and contains common email patterns
+                if (!email.includes('@') && (email.includes('gmail') || email.includes('yahoo') || email.includes('hotmail'))) {
+                    const parts = email.split(/gmail|yahoo|hotmail/);
+                    if (parts.length === 2) {
+                        const provider = email.match(/(gmail|yahoo|hotmail)/)[0];
+                        email = parts[0] + '@' + provider + '.com';
+                    }
+                }
+                
+                return email;
+            }
+
+            processPhoneNumber(input) {
+                // Extract numbers from speech, handling various formats
+                const numbers = input.replace(/\D/g, '');
+                
+                // If it's a 10-digit number, format it nicely
+                if (numbers.length === 10) {
+                    return numbers.replace(/(\d{5})(\d{5})/, '$1-$2');
+                } else if (numbers.length === 11 && numbers.startsWith('91')) {
+                    return '+91-' + numbers.slice(2).replace(/(\d{5})(\d{5})/, '$1-$2');
+                }
+                
+                return numbers;
+            }
+
+            processAge(input) {
+                const numbers = input.match(/\d+/);
+                return numbers ? numbers[0] : input;
+            }
+
+            processGender(input) {
+                const lowerInput = input.toLowerCase();
+                
+                // Check for male keywords in various languages
+                if (lowerInput.includes('male') || lowerInput.includes('पुरुष') || 
+                    lowerInput.includes('পুরুষ') || lowerInput.includes('పురుషుడు') ||
+                    lowerInput.includes('पुरुष') || lowerInput.includes('ஆண்') ||
+                    lowerInput.includes('પુરુષ') || lowerInput.includes('ಪುರುಷ') ||
+                    lowerInput.includes('പുരുഷൻ') || lowerInput.includes('ਮਰਦ')) {
+                    return 'male';
+                }
+                
+                // Check for female keywords
+                if (lowerInput.includes('female') || lowerInput.includes('महिला') ||
+                    lowerInput.includes('মহিলা') || lowerInput.includes('స్త్రీ') ||
+                    lowerInput.includes('स्त्री') || lowerInput.includes('பெண்') ||
+                    lowerInput.includes('સ્ત્રી') || lowerInput.includes('ಮಹಿಳೆ') ||
+                    lowerInput.includes('സ്ത്രീ') || lowerInput.includes('ਔਰਤ')) {
+                    return 'female';
+                }
+                
+                return 'other';
+            }
+
+            capitalizeFirst(str) {
+                return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+            }
+
+            handleSpeechError(event) {
+                console.error('Speech recognition error:', event.error);
+                
+                let errorMessage = 'Speech recognition error. ';
+                switch (event.error) {
+                    case 'network':
+                        errorMessage += 'Please check your internet connection.';
+                        break;
+                    case 'not-allowed':
+                        errorMessage += 'Please allow microphone access.';
+                        break;
+                    case 'no-speech':
+                        errorMessage += 'No speech detected. Trying again...';
+                        setTimeout(() => this.speakAndListen(), 1000);
+                        return;
+                    default:
+                        errorMessage += 'Please try again.';
+                }
+                
+                this.showStatus('processing', errorMessage);
+                setTimeout(() => {
+                    if (this.isActive) {
+                        this.speakAndListen();
+                    }
+                }, 2000);
+            }
+
+            handleSpeechEnd() {
+                // Speech recognition ended, but we handle continuation in handleSpeechResult
+            }
+
+            highlightCurrentField() {
+                this.clearFieldHighlights();
+                
+                if (this.currentFieldIndex < this.formFields.length) {
+                    const fieldId = this.formFields[this.currentFieldIndex].id;
+                    const element = document.getElementById(fieldId);
+                    
+                    if (element) {
+                        element.classList.add('current-field');
+                        
+                        // Enable the field temporarily
+                        if (element.tagName === 'SELECT') {
+                            element.disabled = false;
+                        } else {
+                            element.readOnly = false;
+                        }
+                    }
+                    
+                    // Update field indicator
+                    const indicator = document.getElementById(`indicator-${this.currentFieldIndex}`);
+                    if (indicator) {
+                        indicator.classList.add('current');
+                    }
+                }
+            }
+
+            clearFieldHighlights() {
+                this.formFields.forEach((field, index) => {
+                    const element = document.getElementById(field.id);
+                    if (element) {
+                        element.classList.remove('current-field');
+                        
+                        // Disable field after input
+                        if (element.tagName === 'SELECT') {
+                            element.disabled = true;
+                        } else {
+                            element.readOnly = true;
+                        }
+                    }
+                    
+                    const indicator = document.getElementById(`indicator-${index}`);
+                    if (indicator) {
+                        indicator.classList.remove('current');
+                    }
+                });
+            }
+
+            markFieldCompleted(index) {
+                const fieldId = this.formFields[index].id;
+                const element = document.getElementById(fieldId);
+                const indicator = document.getElementById(`indicator-${index}`);
+                
+                if (element) {
+                    element.parentElement.classList.add('filled');
+                    element.classList.remove('current-field');
+                    
+                    // Disable the field
+                    if (element.tagName === 'SELECT') {
+                        element.disabled = true;
+                    } else {
+                        element.readOnly = true;
+                    }
+                }
+                
+                if (indicator) {
+                    indicator.classList.remove('current');
+                    indicator.classList.add('completed');
+                }
+            }
+
+            updateProgress() {
+                const progressPercentage = (this.currentFieldIndex / this.formFields.length) * 100;
+                document.getElementById('progressFill').style.width = `${progressPercentage}%`;
+            }
+
+            showStatus(type, message) {
+                const statusElement = document.getElementById('status');
+                statusElement.className = `status ${type}`;
+                statusElement.textContent = message;
+                statusElement.style.display = 'block';
+            }
+
+            hideStatus() {
+                document.getElementById('status').style.display = 'none';
+            }
+
+            completeForm() {
+                this.clearFieldHighlights();
+                this.updateProgress();
+                
+                const completionMessage = {
+                    'hi-IN': 'फॉर्म पूरा हो गया! कृपया जांच लें और सबमिट करें।',
+                    'en-IN': 'Form completed! Please review and submit.',
+                    'bn-IN': 'ফর্ম সম্পূর্ণ! অনুগ্রহ করে পর্যালোচনা করুন এবং জমা দিন।',
+                    'te-IN': 'ఫారం పూర్తయింది! దయచేసి సమీక్షించండి మరియు సమర్పించండి।',
+                    'mr-IN': 'फॉर्म पूर्ण झाला! कृपया पुनरावलोकन करा आणि सबमिट करा।',
+                    'ta-IN': 'படிவம் முடிந்தது! தயவுசெய்து மதிப்பாய்வு செய்து சமர்ப்பிக்கவும்।',
+                    'gu-IN': 'ફોર્મ પૂર્ણ! કૃપા કરીને સમીક્ષા કરો અને સબમિટ કરો।',
+                    'kn-IN': 'ಫಾರ್ಮ್ ಪೂರ್ಣಗೊಂಡಿದೆ! ದಯವಿಟ್ಟು ಪರಿಶೀಲಿಸಿ ಮತ್ತು ಸಲ್ಲಿಸಿ।',
+                    'ml-IN': 'ഫോം പൂർത്തിയായി! ദയവായി അവലോകനം ചെയ്ത് സമർപ്പിക്കൂ।',
+                    'pa-IN': 'ਫਾਰਮ ਪੂਰਾ ਹੋਇਆ! ਕਿਰਪਾ ਕਰਕੇ ਸਮੀਖਿਆ ਕਰੋ ਅਤੇ ਜਮ੍ਹਾ ਕਰੋ।'
+                };
+                
+                this.showStatus('processing', completionMessage[this.selectedLanguage] || completionMessage['en-IN']);
+                this.speak(completionMessage[this.selectedLanguage] || completionMessage['en-IN'], () => {
+                    this.stopVoiceAssistant();
+                });
+            }
+
+            handleFormSubmit(event) {
+                event.preventDefault();
+                
+                const formData = new FormData(event.target);
+                const data = Object.fromEntries(formData.entries());
+                
+                // Show success message
+                const successMessage = {
+                    'hi-IN': 'फॉर्म सफलतापूर्वक जमा हो गया! धन्यवाद।',
+                    'en-IN': 'Form submitted successfully! Thank you.',
+                    'bn-IN': 'ফর্ম সফলভাবে জমা দেওয়া হয়েছে! ধন্যবাদ।',
+                    'te-IN': 'ఫారం విజయవంతంగా సమర్పించబడింది! ధన్యవాదాలు।',
+                    'mr-IN': 'फॉर्म यशस्वीरित्या सबमिट झाला! धन्यवाद।',
+                    'ta-IN': 'படிவம் வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது! நன்றி।',
+                    'gu-IN': 'ફોર્મ સફળતાપૂર્વક સબમિટ થયું! આભાર.',
+                    'kn-IN': 'ಫಾರ್ಮ್ ಯಶಸ್ವಿಯಾಗಿ ಸಲ್ಲಿಸಲಾಗಿದೆ! ಧನ್ಯವಾದಗಳು.',
+                    'ml-IN': 'ഫോം വിജയകരമായി സമർപ്പിച്ചു! നന്ദി.',
+                    'pa-IN': 'ਫਾਰਮ ਸਫਲਤਾਪੂਰਵਕ ਜਮ੍ਹਾ ਹੋਇਆ! ਧੰਨਵਾਦ।'
+                };
+                
+                alert(successMessage[this.selectedLanguage] || successMessage['en-IN']);
+                console.log('Form Data:', data);
+                
+                // Here you would typically send the data to your server
+                // fetch('/api/submit-form', { method: 'POST', body: formData })
+            }
+        }
+
+        // Initialize the voice form assistant when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new VoiceFormAssistant();
+            
+            // Load voices when they become available
+            if (speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = () => {
+                    // Voices loaded
+                };
+            }
+        });
+    </script>
+</body>
+</html>
