@@ -113,7 +113,7 @@ def main():
     config = speech.RecognitionConfig(
         encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
         sample_rate_hertz=RATE,
-        language_code="kn-IN",  # Primary language code
+        language_code="hi-IN",  # Primary language code
         alternative_language_codes=["hi-IN", "en-US", "ta-IN", "te-IN"], # Adjusted to 4 alternatives
         model="latest_long",
         enable_automatic_punctuation=True,
