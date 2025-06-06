@@ -2,3 +2,6 @@ google-cloud-speech
 google-cloud-language
 pyaudio
 google-cloud-translate
+langchain-google-genai
+selenium
+python-dotenv
